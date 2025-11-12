@@ -11,6 +11,7 @@ import sys
 import subprocess
 import runpy
 import builtins
+import datetime
 from pathlib import Path
 
 
@@ -19,6 +20,12 @@ from pathlib import Path
 # ----------------------------
 
 _current_step = 0
+
+
+# UI stuff
+
+_h1 = 70
+_h2 = 65
 
 # ----------------------------
 # Helper functions
@@ -35,7 +42,9 @@ def step(name: str):
 
     global _current_step
     _current_step += 1
-    print(f"\nRUNBOOK - STEP {_current_step}: {name}")
+
+    print(f">> STEP {_current_step}: {name}")
+    print(f"-" * _h2)
 
     return True
 
@@ -44,18 +53,21 @@ def shell(cmd: str):
     Execute a shell command as root.
     """
 
-    print("$ "+cmd, flush=True)
+    print("$ "+cmd)
     result = subprocess.run(cmd, shell=True, text=True, capture_output=True)
     stdout, stderr = result.stdout, result.stderr
 
     if stdout:
-        print(stdout, end="")
+        for row in stdout.splitlines():
+            print(row)
     if stderr:
-        print(stderr, end="", file=sys.stderr)
+        print(stderr, file=sys.stderr)
 
     if result.returncode != 0:
-        print(f"ERROR: Command failed with exit code {result.returncode}")
+        error(f"Command failed with exit code {result.returncode}")
         sys.exit(result.returncode)
+    else:
+        success()
 
 def _require_root():
     """
@@ -74,6 +86,25 @@ def _setup_environment():
     builtins.step = step
     builtins.shell = shell
 
+def error(message: str = None):
+    """
+    Print an error message.
+    """
+    if message:
+        print(f"❌ ERROR ({message.capitalize()})")
+    else:
+        print(f"❌ ERROR")
+    print(flush=True)
+
+def success(message: str = None):
+    """
+    Print an success message.
+    """
+    if message:
+        print(f"✅ SUCCESS ({message.capitalize()})")
+    else:
+        print(f"✅ SUCCESS")
+    print(flush=True)
 
 # ----------------------------
 # Main
@@ -87,7 +118,7 @@ def main():
 
     runbook_path = Path(sys.argv[1])
     if not runbook_path.exists():
-        print(f"ERROR: Runbook not found: {runbook_path}")
+        error(f"Runbook not found: {runbook_path}")
         sys.exit(1)
 
     # Set up execution environment
@@ -95,15 +126,25 @@ def main():
     _setup_environment()
 
     # Execute the runbook
-    print(f"RUNBOOK - EXECUTE: {runbook_path}")
+    print(f"=" * _h1)
+    print(f"RUNBOOK - {runbook_path}")
+    print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    print(f"=" * _h1)
+    print()
+
     try:
         runpy.run_path(runbook_path, run_name="__main__")
     except KeyboardInterrupt:
-        print("\nERROR: Interrupted by user")
-        sys.exit(130)
+        print()
+        error("Interrupted by user")
+        sys.exit(2)
 
     # Done
-    print(f"\nRUNBOOK - COMPLETE")
+    print(f"=" * _h1)
+    print(f"RUNBOOK COMPLETE")
+    print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    print(f"Steps: {_current_step}")
+    print(f"=" * _h1)
 
 
 # ----------------------------
