@@ -1,6 +1,12 @@
 # runbook
 Simple python based runbook automation.
 
+You can test the runbook system with included hello_world.py script.
+
+```
+sudo runbook hello_world.py
+```
+
 ## Installing Runbook
 
 1. Clone this project
