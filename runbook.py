@@ -36,25 +36,19 @@ _h2 = 65
 def step(name: str):
     """
     Keep track of different steps of the runbook.
-    
-    Returns:
-      - True, if the step should be executed.
-      - False, if the step should be skipped.
     """
 
     global _current_step
     _current_step += 1
 
     print(f">> STEP {_current_step}: {name}")
-    print(f"-" * _h2)
-
-    return True
 
 def shell(cmd: str):
     """
     Execute a shell command as root.
     """
 
+    print(f"-" * _h2)
     print("$ "+cmd)
     result = subprocess.run(cmd, shell=True, text=True, capture_output=True)
     stdout, stderr = result.stdout, result.stderr
@@ -64,6 +58,8 @@ def shell(cmd: str):
             print(row)
     if stderr:
         print(stderr, file=sys.stderr)
+
+    print(f"-" * _h2)
 
     if result.returncode != 0:
         global _failed_count
@@ -80,8 +76,10 @@ def manual(instruction: str):
     Print instructions for manual step. Wait for confirmation.
     """
 
+    print(f"-" * _h2)
     print("✨ MANUAL TASK")
     print(instruction)
+    print(f"-" * _h2)
 
     global _completed_count
     global _skipped_count
@@ -95,24 +93,15 @@ def manual(instruction: str):
             return
         elif choice in ["s", "skip"]:
             _skipped_count += 1
-            print("❎ STEP SKIPPED BY USER")
+            print("❎ SKIPPED BY USER")
             print(flush=True)
             return
         elif choice in ["a", "abort"]:
             _failed_count += 1
-            error("STEP ABORTED BY USER")
+            error("ABORTED BY USER")
             sys.exit(1)
         else:
-            print("Invalid input. Please press Enter, or type 'skip' or 'abort'.")
-
-def _require_root():
-    """
-    Ensure the script runs as root.
-    """
-
-    if os.geteuid() != 0:
-        print("ERROR: This command must be run as root (use sudo).")
-        sys.exit(1)
+            print("[c]ontinue or [s]kip or [a]bort: ")
 
 def error(message: str = None):
     """
@@ -137,6 +126,15 @@ def success(message: str = None):
 # ----------------------------
 # Main
 # ----------------------------
+
+def _require_root():
+    """
+    Ensure the script runs as root.
+    """
+
+    if os.geteuid() != 0:
+        print("ERROR: This command must be run as root (use sudo).")
+        sys.exit(1)
 
 def _setup_environment():
     """
