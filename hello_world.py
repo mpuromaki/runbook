@@ -10,6 +10,7 @@ Usage:
 
 step("Hello")
 shell("echo 'Hello'")
+manual("This is derived example for manual step.")
 
 step("World")
 shell("echo 'World'")

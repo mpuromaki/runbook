@@ -20,7 +20,9 @@ from pathlib import Path
 # ----------------------------
 
 _current_step = 0
-
+_completed_count = 0
+_skipped_count = 0
+_failed_count = 0
 
 # UI stuff
 
@@ -64,10 +66,44 @@ def shell(cmd: str):
         print(stderr, file=sys.stderr)
 
     if result.returncode != 0:
+        global _failed_count
+        _failed_count += 1
         error(f"Command failed with exit code {result.returncode}")
         sys.exit(result.returncode)
     else:
+        global _completed_count
+        _completed_count += 1
         success()
+
+def manual(instruction: str):
+    """
+    Print instructions for manual step. Wait for confirmation.
+    """
+
+    print("✨ MANUAL TASK")
+    print(instruction)
+
+    global _completed_count
+    global _skipped_count
+    global _failed_count
+
+    while True:
+        choice = input("[c]ontinue or [s]kip or [a]bort: ")
+        if choice in ("", "c", "continue"):
+            _completed_count += 1
+            success()
+            return
+        elif choice in ["s", "skip"]:
+            _skipped_count += 1
+            print("❎ STEP SKIPPED BY USER")
+            print(flush=True)
+            return
+        elif choice in ["a", "abort"]:
+            _failed_count += 1
+            error("STEP ABORTED BY USER")
+            sys.exit(1)
+        else:
+            print("Invalid input. Please press Enter, or type 'skip' or 'abort'.")
 
 def _require_root():
     """
@@ -77,14 +113,6 @@ def _require_root():
     if os.geteuid() != 0:
         print("ERROR: This command must be run as root (use sudo).")
         sys.exit(1)
-
-def _setup_environment():
-    """
-    Inject Runbook helpers into the global scope.
-    This allows the runbook scripts to stay clean and lean.
-    """
-    builtins.step = step
-    builtins.shell = shell
 
 def error(message: str = None):
     """
@@ -109,6 +137,15 @@ def success(message: str = None):
 # ----------------------------
 # Main
 # ----------------------------
+
+def _setup_environment():
+    """
+    Inject Runbook helpers into the global scope.
+    This allows the runbook scripts to stay clean and lean.
+    """
+    builtins.step = step
+    builtins.shell = shell
+    builtins.manual = manual
 
 def main():
     # Handle arguments
@@ -143,7 +180,7 @@ def main():
     print(f"=" * _h1)
     print(f"RUNBOOK COMPLETE")
     print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    print(f"Steps: {_current_step}")
+    print(f"Success: {_completed_count}, Skipped: {_skipped_count}, Failed: {_failed_count}")
     print(f"=" * _h1)
 
 
