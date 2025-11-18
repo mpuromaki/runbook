@@ -27,7 +27,7 @@ So use the HTTPS repository to make life easier.
 
 ```
 cd runbook
-sudo pip install .
+sudo pipx install .
 ```
 
 ## Updating Runbook
